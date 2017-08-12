@@ -1,0 +1,70 @@
+setwd("D://HPCC_Example//R//Iris")
+getwd()
+
+data(iris)
+
+## 75% of the sample size
+smp_size <- floor(0.8 * nrow(iris))
+
+## set the seed to make your partition reproductible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(iris)), size = smp_size)
+
+# Divide Data
+train <- iris[train_ind, ]
+test <- iris[-train_ind, ]
+
+## Summary
+str(train)
+str(test)
+
+# na value check
+# Finding NA
+#  na_count <-sapply(Test, function(y) sum(length(which(is.na(y)))))
+#  na_count <- data.frame(na_count)
+#  na_count # no NA values present 
+########################
+
+## train survival 
+table(train$Species)
+prop.table(table(train$Species))
+
+
+library(rpart)
+
+# model
+model<-Species ~ .
+
+
+pred<-rpart(model,train, method = "class", control=rpart.control( minsplit = 60))
+
+plot(pred,compress=TRUE)
+text(pred)
+
+
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+
+fancyRpartPlot(pred)
+
+#Model Tuning
+#keep xerror minimum
+fancyRpartPlot(prune(pred, cp = pred$cptable[which.min(pred$cptable[,"xerror"]),"CP"]))
+summary.rpart(pred)
+print(pred)
+plotcp(pred)
+printcp(pred)
+summary(pred)
+labels(pred)
+
+pred<-prune(pred, cp = pred$cptable[which.min(pred$cptable[,"xerror"]),"CP"])
+
+PredSpc<-predict(pred,test)
+PredSpc<-colnames(PredSpc)[apply(PredSpc,1,which.max)]
+
+irisTabs <- table(PredSpc, test$Species)
+
+confusionMatrix(irisTabs)
+table(test$Species)
+ 
