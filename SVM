@@ -1,0 +1,62 @@
+library("e1071") 
+library(caret)
+
+# Load data
+data(iris)
+attach(iris)
+
+## 75% of the sample size
+smp_size <- floor(0.8 * nrow(iris))
+
+## set the seed to make your partition reproductible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(iris)), size = smp_size)
+
+train <- iris[train_ind, ]
+test <- iris[-train_ind, ]
+# Prepare test data
+
+x <- subset(test, select = -Species)
+y <- test$Species
+
+
+# Create model
+model <- svm(Species ~ ., data = train)
+
+
+# test with train data
+pred <- predict(model, x)
+
+
+# Check accuracy:
+head(table(pred, y))
+
+# using Confusion matrix
+confusionMatrix(pred, y)
+
+# visualize (classes by color, SV by crosses):
+plot(cmdscale(dist(iris[,-5])),
+     col = as.integer(iris[,5]),
+     pch = c("o","+")[1:150 %in% model$index + 1])
+
+# Tune parameter
+svm_tune <- best.svm(Species~., data = train, 
+                     cost = 2^(2:8), 
+                     kernel = "linear")
+
+print(svm_tune) # update parameters
+
+model <- svm(Species ~ ., data = train, kernel="linear", cost=64, gamma=0.25)
+
+# Check accuracy:
+head(table(pred, y))
+
+# using Confusion matrix
+confusionMatrix(pred, y)
+
+
+# visualize (classes by color, SV by crosses):
+plot(cmdscale(dist(iris[,-5])),
+     col = as.integer(iris[,5]),
+     pch = c("o","+")[1:150 %in% model$index + 1])
+
